@@ -1,0 +1,95 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f7fa;
+}
+
+h1, h2, h3 {
+  color: #2c3e50;
+}
+
+#saldo {
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+table {
+  font-size: 0.9rem;
+}
+
+.actions-btn button {
+  margin-right: 5px;
+}
+
+.actions-btn button:last-child {
+  margin-right: 0;
+}
+
+.btn-outline-primary {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.btn-outline-primary:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-outline-danger {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+.card {
+  border-radius: 0.5rem;
+}
+
+.form-label {
+  font-weight: 600;
+}
+
+@media (max-width: 576px) {
+  .form-area form {
+    flex-direction: column;
+  }
+}
+
+/* Correção aba Categorias para fundo branco e texto legível */
+#categorias {
+  background-color: white !important;
+  color: #212529 !important; /* cor padrão do Bootstrap */
+  padding: 1rem;
+}
+
+#listaCategorias li.list-group-item {
+  background-color: white;
+  color: #212529;
+}
+
+#listaCategorias li.list-group-item button.btn-danger {
+  color: white;
+}
+
+/* Aba Contas - fundo branco e padding */
+#contas {
+  background-color: white !important;
+  color: #212529 !important;
+  padding: 1rem;
+}
+
+/* Tabela Contas - efeito hover */
+#listaContas tr:hover {
+  background-color: #f0f8ff;
+}
+
+/* Botões nas ações (geral) */
+.actions-btn button {
+  margin-right: 5px;
+}
+.actions-btn button:last-child {
+  margin-right: 0;
+}
