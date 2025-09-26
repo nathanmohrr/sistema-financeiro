@@ -1,0 +1,87 @@
+{
+  "name": "sistema-financeiro",
+  "version": "0.1.24",
+  "private": true,
+  "description": "App desktop (Electron) do Sistema Financeiro com dados na nuvem (Firebase).",
+  "author": {
+    "name": "Seu Nome",
+    "email": "seu-email@example.com"
+  },
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "build": "npm run build:win",
+  "build:win": "npm run make:icon && electron-builder --win",
+    "pack": "electron-builder --dir",
+  "release:win": "electron-builder --win -p always",
+  "publish:github": "node scripts/publish-release.js",
+  "release:all": "node scripts/build-and-publish.js",
+  "verify:release": "node scripts/verify-release.js",
+  "make:icon": "node scripts/make-icon.js",
+  "make:icon:multi": "SET MULTI_ICON=1&& node scripts/make-icon.js",
+  "verify:icon": "node scripts/verify-icon.js"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "jimp": "^0.22.12",
+    "png-to-ico": "^2.1.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nathanmohrr/sistema-financeiro.git"
+  },
+    "build": {
+  "appId": "com.seuorg.sistemafinanceiro",
+  "productName": "Sistema Financeiro",
+  "artifactName": "Sistema-Financeiro-Setup-${version}.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+  "compression": "normal",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "nathanmohrr",
+        "repo": "sistema-financeiro",
+        "releaseType": "release"
+      }
+    ],
+    "files": [
+      "index.html",
+      "style.css",
+      "script.js",
+      "config.json",
+      "css.txt",
+      "js.txt",
+      "html.txt",
+      "electron/**/*"
+    ],
+    "extraResources": [
+      "config.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "runAfterFinish": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "include": "build/installer.nsh"
+    },
+    "icon": "build/icon.ico"
+  }
+}

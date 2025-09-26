@@ -1,0 +1,7 @@
+  • electron-builder  version=24.13.3 os=10.0.26100
+  • loaded configuration  file=package.json ("build" field)
+  • packaging       platform=win32 arch=x64 electron=30.5.1 appOutDir=dist\win-unpacked
+  • default Electron icon is used  reason=application icon is not set
+  • packaging       platform=win32 arch=ia32 electron=30.5.1 appOutDir=dist\win-ia32-unpacked
+  • building        target=nsis file=dist\Sistema Financeiro Setup 0.1.4.exe archs=x64, ia32 oneClick=true perMachine=false
+  • building block map  blockMapFile=dist\Sistema Financeiro Setup 0.1.4.exe.blockmap

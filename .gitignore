@@ -1,0 +1,16 @@
+# Dependências e builds
+node_modules/
+dist/
+
+# Config local (não comitar segredos)
+config.json
+
+# SO/Editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Logs
+npm-debug.log*
+yarn-error.log
+publish.log
