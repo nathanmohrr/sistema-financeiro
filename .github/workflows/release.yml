@@ -1,9 +1,8 @@
 name: Build e Publicação Automática
-
 on:
   push:
     tags:
-      - 'v*' # Sempre que tu criar uma tag tipo v1.0.0, ele vai rodar
+      - 'v*' # Ex: v1.0.0 → publica automaticamente
 
 jobs:
   build:
@@ -21,10 +20,8 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
-      - name: Gerar instalador
+      - name: Gerar build e Publicar Release
         run: npx electron-builder --win
-
-      - name: Publicar Release no GitHub
-        run: node scripts/publish-release.js
         env:
+          # O electron-builder precisa do token neste passo!
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
