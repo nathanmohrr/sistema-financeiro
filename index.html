@@ -11,6 +11,30 @@
   <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
+  <!-- Logger centralizado (appLogger) - disponível globalmente para facilitar observabilidade -->
+  <script>
+    (function(){
+      if(window.appLogger) return; // não sobrescrever se já existir
+      const orig = {
+        log: console.log.bind(console), warn: console.warn.bind(console), error: console.error.bind(console), info: console.info.bind(console), debug: console.debug.bind(console)
+      };
+      function fmt(a){ const ts = new Date().toISOString(); return [`[${ts}]`, ...a]; }
+      window.appLogger = {
+        log:(...a)=>{ try{ orig.log(...fmt(a)); }catch(e){ orig.error('[GEN] appLogger falhou', e); } },
+        warn:(...a)=>{ try{ orig.warn(...fmt(a)); }catch(e){ orig.error('[GEN] appLogger falhou', e); } },
+        error:(...a)=>{ try{ orig.error(...fmt(a)); }catch(e){ orig.error('[GEN] appLogger falhou', e); } },
+        info:(...a)=>{ try{ orig.info(...fmt(a)); }catch(e){ orig.error('[GEN] appLogger falhou', e); } },
+        debug:(...a)=>{ try{ orig.debug(...fmt(a)); }catch(e){ orig.error('[GEN] appLogger falhou', e); } }
+      };
+      // opcional: encaminhar console para appLogger
+      console.log = (...a)=> window.appLogger.log(...a);
+      console.warn = (...a)=> window.appLogger.warn(...a);
+      console.error = (...a)=> window.appLogger.error(...a);
+      console.info = (...a)=> window.appLogger.info(...a);
+      console.debug = (...a)=> window.appLogger.debug(...a);
+    })();
+  </script>
+
   <style>
     :root{
       --app-sidebar-1: #0d6efd;
@@ -1854,12 +1878,12 @@
     async function initCloud(){
       try{
         const cfg = await loadCloudConfig();
-        if(!cfg){ console.warn('[CLOUD] Nenhum config.json carregado (config ausente ou não acessível)'); }
-        if(!window.firebase){ console.warn('[CLOUD] SDK Firebase não disponível (script não carregado?)'); }
+        if(!cfg){ appLogger.warn('[CLOUD] Nenhum config.json carregado (config ausente ou não acessível)'); }
+        if(!window.firebase){ appLogger.warn('[CLOUD] SDK Firebase não disponível (script não carregado?)'); }
         if(!cfg || !window.firebase) { cloud.inited=false; cloud.enabled=false; updateFooterOnlineStatus(); return; }
         if(!cloud.inited){
-          try{ firebase.initializeApp(cfg.firebase); console.log('[CLOUD] Firebase inicializado'); }
-          catch(e){ console.warn('[CLOUD] Firebase já inicializado ou falhou:', e?.message||e); }
+          try{ firebase.initializeApp(cfg.firebase); appLogger.log('[CLOUD] Firebase inicializado'); }
+          catch(e){ appLogger.warn('[CLOUD] Firebase já inicializado ou falhou:', e?.message||e); }
           window.auth = firebase.auth();
           window.fsdb = firebase.firestore();
           cloud.inited = true;
@@ -1955,7 +1979,7 @@
         const users = await listar(STORES.USU).catch(()=>[]);
         if(!users || users.length===0){
           await criarUsuario({ nome: 'Administrador', login: 'admin', perfil: 'ADMIN', ativo: true, senha: 'admin' });
-          try{ console.info('Usuário inicial criado: admin / admin'); }catch(_){ }
+          try{ appLogger.info('Usuário inicial criado: admin / admin'); }catch(_){ }
         }
       }catch(_){ /* silencioso */ }
     }
@@ -2087,7 +2111,7 @@
           origem: origem || ''
         };
         await adicionar(STORES.MOV, mov);
-      } catch(err){ console.warn('Falha ao registrar movimento', err); }
+      } catch(err){ appLogger.warn('Falha ao registrar movimento', err); }
     }
 
     // ===== Caixa: sessões e movimentos (CX, CXM) =====
@@ -2230,7 +2254,7 @@
             }
           }
         }catch(_){ }
-      }catch(err){ console.warn('Falha ao carregar caixa', err); }
+      }catch(err){ appLogger.warn('Falha ao carregar caixa', err); }
     }
     // Função initCaixa: wrapper de inicialização da aba Caixa e ligação de eventos
     function initCaixa(){
@@ -2265,16 +2289,16 @@
       }
 
       // Ações dos botões
-      btnAbrir?.addEventListener('click', ()=>{ try{ const v = parseCurrencyGeneric(inpAbert?.value||'0'); abrirCaixa(v); }catch(e){ console.warn('cx: abrir erro', e); } });
-      btnFechar?.addEventListener('click', async ()=>{ try{ const cur = prompt('Informe o valor contado no caixa (ex: 1234.56 ou 1.234,56):'); if(cur === null) return; const v = parseCurrencyGeneric(cur); await fecharCaixa(v); }catch(e){ console.warn('cx: fechar erro', e); } });
+      btnAbrir?.addEventListener('click', ()=>{ try{ const v = parseCurrencyGeneric(inpAbert?.value||'0'); abrirCaixa(v); }catch(e){ appLogger.warn('cx: abrir erro', e); } });
+      btnFechar?.addEventListener('click', async ()=>{ try{ const cur = prompt('Informe o valor contado no caixa (ex: 1234.56 ou 1.234,56):'); if(cur === null) return; const v = parseCurrencyGeneric(cur); await fecharCaixa(v); }catch(e){ appLogger.warn('cx: fechar erro', e); } });
 
-      btnSup?.addEventListener('click', async ()=>{ try{ const cur = prompt('Valor do suprimento:'); if(cur === null) return; const desc = prompt('Descrição (opcional):','Suprimento'); if(desc === null) return; await cxAdicionarMovimento({ tipo:'suprimento', valor: parseCurrencyGeneric(cur), descricao: desc }); }catch(e){ console.warn('cx: suprimento erro', e); } });
-      btnSan?.addEventListener('click', async ()=>{ try{ const cur = prompt('Valor da sangria:'); if(cur === null) return; const desc = prompt('Descrição (opcional):','Sangria'); if(desc === null) return; await cxAdicionarMovimento({ tipo:'sangria', valor: parseCurrencyGeneric(cur), descricao: desc }); }catch(e){ console.warn('cx: sangria erro', e); } });
-      btnAj?.addEventListener('click', async ()=>{ try{ const cur = prompt('Valor do ajuste (use sinal - para redução):'); if(cur === null) return; const desc = prompt('Descrição (opcional):','Ajuste manual'); if(desc === null) return; await cxAdicionarMovimento({ tipo:'ajuste', valor: parseCurrencyGeneric(cur), descricao: desc }); }catch(e){ console.warn('cx: ajuste erro', e); } });
+      btnSup?.addEventListener('click', async ()=>{ try{ const cur = prompt('Valor do suprimento:'); if(cur === null) return; const desc = prompt('Descrição (opcional):','Suprimento'); if(desc === null) return; await cxAdicionarMovimento({ tipo:'suprimento', valor: parseCurrencyGeneric(cur), descricao: desc }); }catch(e){ appLogger.warn('cx: suprimento erro', e); } });
+      btnSan?.addEventListener('click', async ()=>{ try{ const cur = prompt('Valor da sangria:'); if(cur === null) return; const desc = prompt('Descrição (opcional):','Sangria'); if(desc === null) return; await cxAdicionarMovimento({ tipo:'sangria', valor: parseCurrencyGeneric(cur), descricao: desc }); }catch(e){ appLogger.warn('cx: sangria erro', e); } });
+      btnAj?.addEventListener('click', async ()=>{ try{ const cur = prompt('Valor do ajuste (use sinal - para redução):'); if(cur === null) return; const desc = prompt('Descrição (opcional):','Ajuste manual'); if(desc === null) return; await cxAdicionarMovimento({ tipo:'ajuste', valor: parseCurrencyGeneric(cur), descricao: desc }); }catch(e){ appLogger.warn('cx: ajuste erro', e); } });
 
-      btnConferir?.addEventListener('click', async ()=>{ try{ const cur = $('cxConferenciaValor')?.value || ''; const v = parseCurrencyGeneric(cur); const s = await getSessaoAberta(); if(!s){ if(cxMsg) cxMsg.textContent = 'Nenhum caixa aberto.'; return; } const resumo = await calcularResumoSessao(s); const diff = v - Number(resumo.saldoEsperado||0); if(cxMsg) cxMsg.textContent = (Math.abs(diff) < 0.005 ? 'Conferência OK. Sem diferenças.' : 'Diferença: '+fmt(diff)); }catch(e){ console.warn('cx: conferir erro', e); } });
+      btnConferir?.addEventListener('click', async ()=>{ try{ const cur = $('cxConferenciaValor')?.value || ''; const v = parseCurrencyGeneric(cur); const s = await getSessaoAberta(); if(!s){ if(cxMsg) cxMsg.textContent = 'Nenhum caixa aberto.'; return; } const resumo = await calcularResumoSessao(s); const diff = v - Number(resumo.saldoEsperado||0); if(cxMsg) cxMsg.textContent = (Math.abs(diff) < 0.005 ? 'Conferência OK. Sem diferenças.' : 'Diferença: '+fmt(diff)); }catch(e){ appLogger.warn('cx: conferir erro', e); } });
 
-      btnTes?.addEventListener('click', async ()=>{ try{ const cur = prompt('Valor para enviar à tesouraria:'); if(cur === null) return; const desc = prompt('Descrição (opcional):','Envio para tesouraria'); if(desc === null) return; await cxAdicionarMovimento({ tipo:'transferencia', valor: parseCurrencyGeneric(cur), descricao: desc }); }catch(e){ console.warn('cx: tesouraria erro', e); } });
+      btnTes?.addEventListener('click', async ()=>{ try{ const cur = prompt('Valor para enviar à tesouraria:'); if(cur === null) return; const desc = prompt('Descrição (opcional):','Envio para tesouraria'); if(desc === null) return; await cxAdicionarMovimento({ tipo:'transferencia', valor: parseCurrencyGeneric(cur), descricao: desc }); }catch(e){ appLogger.warn('cx: tesouraria erro', e); } });
 
       // atualiza UI inicial
       carregarCaixa();
@@ -2298,7 +2322,7 @@
     // Recarrega/Inicializa ao mostrar a aba Caixa
   document.addEventListener('DOMContentLoaded', async ()=>{
       try{
-    try{ console.log('[DIAG] DOMContentLoaded principal executou'); }catch(_){ }
+    try{ appLogger.log('[DIAG] DOMContentLoaded principal executou'); }catch(_){ }
     // Garante que exista pelo menos um usuário (modo local)
     seedAdminUserIfNeeded();
     // Se não houver sessão local e nenhum usuário local salvo, preparar gate para criar conta automaticamente
@@ -2320,7 +2344,7 @@
         // Se a aba já veio ativa por algum motivo, tenta inicializar também
     setTimeout(()=>{ try{ initCaixa(); initCurrencyMasks(); carregarCaixa(); }catch(_){ } }, 0);
     // Inicializa nuvem (Firebase) e UI
-    try{ await initCloud(); console.log('[DIAG] initCloud() concluído dentro DOMContentLoaded'); }catch(e){ console.warn('[DIAG] initCloud falhou', e); }
+    try{ await initCloud(); appLogger.log('[DIAG] initCloud() concluído dentro DOMContentLoaded'); }catch(e){ appLogger.warn('[DIAG] initCloud falhou', e); }
     // Carrega versão do app (se Electron)
     try{ const v = await (window.electronAPI?.getVersion?.() || Promise.resolve(null)); const el = document.getElementById('appVersion'); if(v && el) el.textContent = String(v); }catch(_){ }
   }catch(_){ }
@@ -2381,16 +2405,16 @@
       if(state.firebaseReady && navigator.onLine){
         cloudTried = true;
         try{
-          console.log('[AUTH][DEBUG] Tentando login nuvem. identifier=', identifier);
+          appLogger.log('[AUTH][DEBUG] Tentando login nuvem. identifier=', identifier);
           const emailLC = identifier.includes('@') ? identifier.toLowerCase() : (await resolveEmailFromIdentifier(identifier));
-          console.log('[AUTH][DEBUG] Resolved email=', emailLC);
+          appLogger.log('[AUTH][DEBUG] Resolved email=', emailLC);
           if(!emailLC) throw new Error('Usuário não encontrado');
           await auth.signInWithEmailAndPassword(emailLC, senha);
           state.cloudUser = auth.currentUser || null;
           if(state.cloudUser){
-            console.log('[AUTH][DEBUG] Login nuvem OK uid=', state.cloudUser.uid);
+            appLogger.log('[AUTH][DEBUG] Login nuvem OK uid=', state.cloudUser.uid);
             state.empresaId = await ensureUserProfileAndEmpresa(state.cloudUser);
-            console.log('[AUTH][DEBUG] empresaId definido =', state.empresaId);
+            appLogger.log('[AUTH][DEBUG] empresaId definido =', state.empresaId);
             state.cloudProfile = await loadCloudProfile();
             cloud.enabled = !!state.empresaId; // sincroniza objeto legado
             loginRunFlag.set(); setLoginGateActive(false);
@@ -2401,19 +2425,19 @@
           }
         }catch(err){
           lastErr = err; state.lastError = err;
-          console.warn('[AUTH][DEBUG] Falha login nuvem:', err?.code, err?.message);
+          appLogger.warn('[AUTH][DEBUG] Falha login nuvem:', err?.code, err?.message);
         }
       }
       if(!cloudOk){
         // tenta local
         try{
-          console.log('[AUTH][DEBUG] Tentando login local identifier=', identifier);
+          appLogger.log('[AUTH][DEBUG] Tentando login local identifier=', identifier);
           const u = await loginUsuario(identifier, senha);
-          console.log('[AUTH][DEBUG] Login local OK userId=', u?.id);
+          appLogger.log('[AUTH][DEBUG] Login local OK userId=', u?.id);
           state.localSession = getSession();
           state.mode = cloudOk? 'online':'offline';
           loginRunFlag.set(); setLoginGateActive(false);
-        }catch(localErr){ console.warn('[AUTH][DEBUG] Falha login local:', localErr?.message);
+        }catch(localErr){ appLogger.warn('[AUTH][DEBUG] Falha login local:', localErr?.message);
           // Se tentou nuvem e falhou: usar msg da nuvem, senão local
           const msg = (lastErr?.message) || (localErr?.message) || 'Falha de login';
           state.lastError = lastErr || localErr;
@@ -2559,7 +2583,7 @@
             const signupModal = signupEl ? bootstrap.Modal.getOrCreateInstance(signupEl) : null;
             if(signupModal){ signupModal.show(); }
             setTimeout(()=>{ suUsername?.focus(); }, 180);
-          }catch(err){ console.warn('[AUTH][DEBUG] Erro ao preparar signup', err); }
+          }catch(err){ appLogger.warn('[AUTH][DEBUG] Erro ao preparar signup', err); }
         });
         // Gate principal botão criar conta
         const gateCriarConta = document.getElementById('gateCriarConta');
@@ -2776,7 +2800,7 @@
             if(suUsername && !suUsername.value) suUsername.value = authManager.sugerirUsername(email||'usuario');
             const signupEl = document.getElementById('modalCloudSignup');
             if(signupEl){ bootstrap.Modal.getOrCreateInstance(signupEl).show(); setTimeout(()=> suEmail?.focus(),120); }
-          }catch(err){ console.warn('[AUTH][DEBUG] erro abrir signup do gate', err); }
+          }catch(err){ appLogger.warn('[AUTH][DEBUG] erro abrir signup do gate', err); }
         });
         gateEsqueci?.addEventListener('click', async ()=>{
           gateMsg.textContent=''; const email = String(document.getElementById('gateEmail')?.value||'').trim();
@@ -2900,7 +2924,7 @@
           });
         }
       } catch (err) {
-        console.error('Falha ao carregar marcas', err);
+        appLogger.error('Falha ao carregar marcas', err);
         const sel=$('produtoMarca');
         if(sel){
           sel.innerHTML='';
@@ -3194,7 +3218,7 @@
         if(!instance) instance = new bootstrap.Modal(modalEl);
         instance.show();
         setTimeout(()=> $('produtoNome')?.focus(), 60);
-      } catch(err){ console.error('Falha ao abrir edição do produto', err); }
+      } catch(err){ appLogger.error('Falha ao abrir edição do produto', err); }
     };
 
     // Inativar/Reativar produto (soft-delete)
@@ -3281,7 +3305,7 @@
             lastKeyTime = now;
           if(ev.key==='Enter'){
             ev.preventDefault(); // não adiciona ao buffer automaticamente
-            // console.debug('[BARCODE] lido:', codBarrasEl.value, 'seq:', seq);
+            // appLogger.debug('[BARCODE] lido:', codBarrasEl.value, 'seq:', seq);
             // Futuro: validar/consultar por código ou preencher produto automaticamente
           }
         });
@@ -3640,7 +3664,7 @@
           }
         }
       } catch (err) {
-        console.error('Erro ao carregar produtos', err);
+        appLogger.error('Erro ao carregar produtos', err);
         const tbody = $('listaProdutos');
   if(tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Erro ao carregar produtos</td></tr>';
       }
@@ -3718,7 +3742,7 @@
       // Garante que a aba Produtos esteja visível para a impressão
       document.getElementById('produtos-tab')?.click();
   setTimeout(()=> window.print(), 150);
-    } catch(err){ console.error('Falha ao imprimir', err); }
+    } catch(err){ appLogger.error('Falha ao imprimir', err); }
   });
 
   // Exportar CSV (com base no que está na tela)
@@ -3769,7 +3793,7 @@
       a.href = url; a.download = `produtos_${y}-${m}-${d}.csv`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(()=> URL.revokeObjectURL(url), 2000);
-    }catch(err){ console.error('Falha ao exportar CSV', err); alert('Falha ao exportar CSV.'); }
+    }catch(err){ appLogger.error('Falha ao exportar CSV', err); alert('Falha ao exportar CSV.'); }
   }
   document.getElementById('btnExportarProdutosCSV')?.addEventListener('click', exportarProdutosCSV);
 
@@ -4644,11 +4668,11 @@
 
     async function carregarClientes(){
       try{
-        console.log('[DEBUG] carregarClientes: start');
+        appLogger.log('[DEBUG] carregarClientes: start');
         const tbody = document.getElementById('listaClientes');
         if(!tbody) return;
         let clientes = await listar(STORES.CLI).catch(()=>[]);
-        console.log('[DEBUG] carregarClientes: encontrados', (clientes||[]).length);
+        appLogger.log('[DEBUG] carregarClientes: encontrados', (clientes||[]).length);
         clientes = sortClientes(clientes);
         tbody.innerHTML = '';
         (clientes||[]).forEach(c=>{
@@ -4683,7 +4707,7 @@
             </td>`;
           tbody.appendChild(tr);
         });
-      }catch(err){ console.error('Falha ao carregar clientes', err); }
+      }catch(err){ appLogger.error('Falha ao carregar clientes', err); }
     }
 
     // Clique no cabeçalho para ordenar (Clientes)
@@ -4716,11 +4740,11 @@
 
     async function salvarClienteModal(){
       try{
-        console.log('[DEBUG] salvarClienteModal: entrada');
+        appLogger.log('[DEBUG] salvarClienteModal: entrada');
         // Garante que o DB esteja pronto
         if(!db){ try{ await abrirDB(); }catch(_){} }
         const idEdit = $('clienteEditId')?.value || '';
-        console.log('[DEBUG] salvarClienteModal: idEdit=', idEdit, 'nome=', $('clienteNomeModal')?.value);
+        appLogger.log('[DEBUG] salvarClienteModal: idEdit=', idEdit, 'nome=', $('clienteNomeModal')?.value);
         const nome = $('clienteNomeModal')?.value?.trim();
         if(!nome){ alert('Informe o nome'); return; }
         // Normaliza CPF apenas com dígitos para checagem
@@ -4765,17 +4789,17 @@
             cli.createdAt = existente.createdAt || existente.created_at;
           }
           await atualizar(STORES.CLI, cli);
-          console.log('[DEBUG] salvarClienteModal: atualizado', cli.id);
+          appLogger.log('[DEBUG] salvarClienteModal: atualizado', cli.id);
         } else {
           const cli = { ...base, createdAt: new Date().toISOString() };
           await adicionar(STORES.CLI, cli);
-          console.log('[DEBUG] salvarClienteModal: adicionado', cli.id);
+          appLogger.log('[DEBUG] salvarClienteModal: adicionado', cli.id);
         }
         await carregarClientes(); await carregarClientesVenda();
         try{ bootstrap?.Modal?.getInstance($('modalCliente'))?.hide(); }catch(_){ /* noop */ }
         limparClienteModal();
       }catch(err){
-        console.error('Erro ao salvar cliente', err);
+        appLogger.error('Erro ao salvar cliente', err);
         alert('Erro ao salvar cliente. Veja detalhes no console.');
       }
     }
@@ -4783,9 +4807,9 @@
     // Abrir/Salvar cliente (delegação, pois o HTML pode vir depois do script)
     document.addEventListener('click', (e)=>{
       const openBtn = e.target instanceof Element ? e.target.closest('#btnAbrirModalCliente') : null;
-      if(openBtn){ console.log('[DEBUG] btnAbrirModalCliente clicked'); e.preventDefault(); limparClienteModal(); const m=$('modalCliente'); let i=bootstrap.Modal.getInstance(m); if(!i) i=new bootstrap.Modal(m); i.show(); setTimeout(()=> $('clienteNomeModal')?.focus(), 60); return; }
+      if(openBtn){ appLogger.log('[DEBUG] btnAbrirModalCliente clicked'); e.preventDefault(); limparClienteModal(); const m=$('modalCliente'); let i=bootstrap.Modal.getInstance(m); if(!i) i=new bootstrap.Modal(m); i.show(); setTimeout(()=> $('clienteNomeModal')?.focus(), 60); return; }
       const saveBtn = e.target instanceof Element ? e.target.closest('#btnSalvarClienteModal') : null;
-      if(saveBtn){ console.log('[DEBUG] btnSalvarClienteModal clicked'); e.preventDefault(); salvarClienteModal(); }
+      if(saveBtn){ appLogger.log('[DEBUG] btnSalvarClienteModal clicked'); e.preventDefault(); salvarClienteModal(); }
     });
     // Submit do formulário do modal com Enter
     document.addEventListener('submit', (e)=>{
@@ -4797,7 +4821,7 @@
     document.addEventListener('click', async (e)=>{
       const btn = e.target instanceof Element ? e.target.closest('button[data-action][data-id]') : null; if(!btn) return;
       const act = btn.getAttribute('data-action'); const id = btn.getAttribute('data-id');
-      console.log('[DEBUG] clientes: delegated click', act, id);
+      appLogger.log('[DEBUG] clientes: delegated click', act, id);
       if(act==='edit-cli'){
         try{
           const todos = await listar(STORES.CLI).catch(()=>[]);
@@ -4820,10 +4844,10 @@
           const grpTipos = $('grpClienteFilhosTipos'); if(grpTipos) grpTipos.classList.toggle('d-none', !temFilhos?.checked);
           const title = $('modalClienteLabel'); if(title) title.textContent = 'Editar Cliente';
           const m=$('modalCliente'); let i=bootstrap.Modal.getInstance(m); if(!i) i=new bootstrap.Modal(m); i.show(); setTimeout(()=> $('clienteNomeModal')?.focus(), 60);
-        }catch(err){ console.error('Falha ao editar cliente', err); }
+        }catch(err){ appLogger.error('Falha ao editar cliente', err); }
       } else if(act==='del-cli'){
         if(!confirm('Excluir este cliente?')) return;
-        console.log('[DEBUG] clientes: deletando', id);
+        appLogger.log('[DEBUG] clientes: deletando', id);
         await deletar(STORES.CLI, id);
         await carregarClientes(); await carregarClientesVenda();
       }
@@ -5144,7 +5168,7 @@
           });
           tbody.dataset.verHandler = '1';
         }
-      }catch(err){ console.error('Falha ao carregar vendas', err); }
+      }catch(err){ appLogger.error('Falha ao carregar vendas', err); }
     }
 
     // Estornar venda: repõe estoque, ajusta caixa (se dinheiro) e marca venda como estornada
@@ -5187,7 +5211,7 @@
         // 4) recarregar listas/estoques visuais
         await Promise.all([carregarProdutos(), carregarVendas(), carregarCaixa()]);
         alert('Venda estornada com sucesso.');
-      }catch(err){ console.error('Falha ao estornar venda', err); alert('Falha ao estornar venda. Veja o console.'); }
+      }catch(err){ appLogger.error('Falha ao estornar venda', err); alert('Falha ao estornar venda. Veja o console.'); }
     }
 
     // Clique para ordenar (Relatórios > Transações)
@@ -5389,13 +5413,13 @@
     // Clientes select para venda
   async function carregarClientesVenda(){
     let clientes = await listar(STORES.CLI).catch(()=>[]);
-    console.log('[DEBUG] carregarClientesVenda: encontrados', (clientes||[]).length, 'clientes');
+    appLogger.log('[DEBUG] carregarClientesVenda: encontrados', (clientes||[]).length, 'clientes');
     clientes = [...(clientes||[])].sort((a,b)=> String(b?.clienteNome||'').toUpperCase().localeCompare(String(a?.clienteNome||'').toUpperCase()));
     const sel=$('vendaCliente');
     if(!sel) return clientes;
     sel.innerHTML='<option value="">Selecione</option>';
     clientes.forEach(c=> sel.appendChild(Object.assign(document.createElement('option'),{value:c.id,textContent:c.clienteNome}))); 
-    console.log('[DEBUG] carregarClientesVenda: select options set, count=', sel.options.length);
+    appLogger.log('[DEBUG] carregarClientesVenda: select options set, count=', sel.options.length);
     return clientes;
   }
 
@@ -5411,7 +5435,7 @@
     // Modal de pagamento, seleção de método e troco
     function abrirModalPagamento(totalInicial){
       const totalEl=$('totalVendaModal'), metodoEl=$('metodoPagamento'), valorPagoEl=$('valorPago'), trocoC=$('trocoContainer'), trocoEl=$('valorTroco'), modalEl=$('modalPagamento');
-      if(!modalEl||!totalEl||!metodoEl||!valorPagoEl){ console.warn('Modal de pagamento incompleto'); return; }
+      if(!modalEl||!totalEl||!metodoEl||!valorPagoEl){ appLogger.warn('Modal de pagamento incompleto'); return; }
       const getTotal = ()=> calcularTotalVendaAtual();
       totalEl.textContent = fmt(getTotal());
       metodoEl.value = 'dinheiro';
@@ -5499,7 +5523,7 @@
               await registrarMovimento({ produto: p, delta, estoqueAntes: antes, estoqueDepois: depois, origem: `VENDA ${venda.id}` });
             }
           }
-        }catch(err){ console.warn('Falha ao baixar estoque da venda', err); }
+        }catch(err){ appLogger.warn('Falha ao baixar estoque da venda', err); }
   carrinho=[]; descontoPercent=0; atualizarCarrinho();
   // Resetar cliente selecionado após finalizar venda
   const selCli = $('vendaCliente'); if(selCli) selCli.value='';
@@ -5738,21 +5762,21 @@
         if(btnEscolher){
           btnEscolher.onclick = async ()=>{
             try{
-              console.log('[DEBUG] btnEscolherCliente clicked, selecionado=', selecionado, 'inp=', inp?.value);
+              appLogger.log('[DEBUG] btnEscolherCliente clicked, selecionado=', selecionado, 'inp=', inp?.value);
               // se nenhum id explicitamente selecionado, tenta usar primeira sugestão
               let id = selecionado;
               if(!id && sugBox){ const first = sugBox.querySelector('[data-cli-id]'); if(first) id = first.getAttribute('data-cli-id')||''; }
               // garante que o select de clientes está carregado
-              try{ await carregarClientesVenda(); }catch(_){ console.warn('[DEBUG] carregarClientesVenda falhou'); }
+              try{ await carregarClientesVenda(); }catch(_){ appLogger.warn('[DEBUG] carregarClientesVenda falhou'); }
               const cli = (clientes||[]).find(x=> String(x.id)===String(id));
               if(!cli){ alert('Selecione um cliente.'); return; }
               const sel = $('vendaCliente'); if(sel){ sel.value = cli.id; }
               const resumo = $('clienteResumo'); if(resumo){ resumo.textContent = `Cliente: ${cli.clienteNome}`; resumo.title = `Cliente: ${cli.clienteNome}`; resumo.classList.remove('d-none'); resumo.classList.add('text-truncate'); resumo.style.display='inline-block'; }
               // também mostra o select de cliente caso esteja oculto (útil para debug)
               const area = $('areaClienteVenda'); if(area) area.style.display = '';
-              console.log('[DEBUG] cliente selecionado', cli.id, cli.clienteNome);
+              appLogger.log('[DEBUG] cliente selecionado', cli.id, cli.clienteNome);
               bootstrap.Modal.getInstance(modalEl)?.hide();
-            }catch(err){ console.error('Erro ao escolher cliente:', err); }
+            }catch(err){ appLogger.error('Erro ao escolher cliente:', err); }
           };
         }
 
@@ -5760,7 +5784,7 @@
         instance.show();
         modalEl.addEventListener('shown.bs.modal', ()=>{ inp?.focus(); }, { once: true });
         modalEl.addEventListener('hidden.bs.modal', ()=>{ if(sugBox){ sugBox.style.display='none'; sugBox.innerHTML=''; } }, { once: true });
-      }catch(err){ console.error('Falha ao carregar clientes para modal', err); }
+      }catch(err){ appLogger.error('Falha ao carregar clientes para modal', err); }
     }
 
     // liga o handler direto e um handler delegado como fallback
@@ -6098,7 +6122,7 @@
         let instance = bootstrap.Modal.getInstance(modalEl);
         if(!instance) instance = new bootstrap.Modal(modalEl);
         instance.show();
-      } catch(err){ console.error('Falha ao abrir histórico', err); }
+      } catch(err){ appLogger.error('Falha ao abrir histórico', err); }
     }
 
     // Inicialização
@@ -6113,7 +6137,7 @@
       }catch(_){ }
   await Promise.all([ carregarCategorias(), carregarAP(), carregarClientes(), carregarLancamentos(), carregarClientesVenda(), carregarVendas(), carregarProdutos(), carregarMarcas() ]);
   // debug: dump clients once after initial load
-  try{ const cliDump = await listar(STORES.CLI).catch(()=>[]); console.log('[DEBUG] dump STORES.CLI after init, count=', (cliDump||[]).length, cliDump.slice(0,10)); }catch(_){ }
+  try{ const cliDump = await listar(STORES.CLI).catch(()=>[]); appLogger.log('[DEBUG] dump STORES.CLI after init, count=', (cliDump||[]).length, cliDump.slice(0,10)); }catch(_){ }
   await initRelatorios();
       atualizarListaProdutosVenda(); atualizarCarrinho(); aplicarPersonalizacao(); carregarPersonalizacaoForm(); initCurrencyMasks();
   // Relógio no header da aba Vendas
@@ -6260,7 +6284,7 @@
         let instance = bootstrap.Modal.getInstance(modalEl);
         if(!instance) instance = new bootstrap.Modal(modalEl);
         instance.show();
-      } catch(err){ console.error('Falha ao abrir histórico do cliente', err); }
+      } catch(err){ appLogger.error('Falha ao abrir histórico do cliente', err); }
     }
 
     // Personalização (expandida)

@@ -76,6 +76,13 @@ app.whenReady().then(() => {
 
   const win = createWindow();
 
+  // Encaminha mensagens de console do renderer para o terminal do main process
+  try{
+    win.webContents.on && win.webContents.on('console-message', (e, level, message, line, sourceId) => {
+      try{ console.log('[RENDERER]', level, message, sourceId+':'+line); }catch(_){ /* noop */ }
+    });
+  }catch(_){ }
+
   // Helper para enviar status de update ao renderer
   const sendUpdate = (status, payload = {}) => {
     try { win.webContents.send('update-status', { status, ...payload }); } catch(_) {}
