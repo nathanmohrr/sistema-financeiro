@@ -1,6 +1,6 @@
 {
   "name": "sistema-financeiro",
-  "version": "0.1.27",
+  "version": "0.1.28",
   "private": true,
   "description": "App desktop (Electron) do Sistema Financeiro com dados na nuvem (Firebase).",
   "author": {
@@ -11,22 +11,25 @@
   "scripts": {
     "dev": "electron .",
     "build": "npm run build:win",
-  "build:win": "npm run make:icon && electron-builder --win",
+    "build:win": "npm run make:icon && electron-builder --win",
     "pack": "electron-builder --dir",
-  "release:win": "electron-builder --win -p always",
-  "publish:github": "node scripts/publish-release.js",
-  "release:all": "node scripts/build-and-publish.js",
-  "verify:release": "node scripts/verify-release.js",
-  "make:icon": "node scripts/make-icon.js",
-  "make:icon:multi": "SET MULTI_ICON=1&& node scripts/make-icon.js",
-  "verify:icon": "node scripts/verify-icon.js"
+    "release:win": "electron-builder --win -p always",
+    "publish:github": "node scripts/publish-release.js",
+    "release:all": "node scripts/build-and-publish.js",
+    "verify:release": "node scripts/verify-release.js",
+    "make:icon": "node scripts/make-icon.js",
+    "make:icon:multi": "SET MULTI_ICON=1&& node scripts/make-icon.js",
+    "verify:icon": "node scripts/verify-icon.js"
   },
   "dependencies": {
-    "electron-updater": "^6.3.9"
+    "electron-updater": "^6.3.9",
+    "escpos": "^3.0.0-alpha.6",
+    "node-printer": "^1.0.4"
   },
   "devDependencies": {
     "electron": "^30.0.0",
     "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9",
     "jimp": "^0.22.12",
     "png-to-ico": "^2.1.7"
   },
@@ -34,14 +37,14 @@
     "type": "git",
     "url": "https://github.com/nathanmohrr/sistema-financeiro.git"
   },
-    "build": {
-  "appId": "com.seuorg.sistemafinanceiro",
-  "productName": "Sistema Financeiro",
-  "artifactName": "Sistema-Financeiro-Setup-${version}.${ext}",
+  "build": {
+    "appId": "com.seuorg.sistemafinanceiro",
+    "productName": "Sistema Financeiro",
+    "artifactName": "Sistema-Financeiro-Setup-${version}.${ext}",
     "directories": {
       "output": "dist"
     },
-  "compression": "normal",
+    "compression": "normal",
     "publish": [
       {
         "provider": "github",
@@ -68,7 +71,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },

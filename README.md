@@ -127,3 +127,13 @@ Resultado da Fase 2:
 
 ## Próximo passo prático
 - Quer que eu integre agora o Login + Firestore (Fase 1) no `index.html` com tudo pronto para você testar? Se sim, eu já adiciono o código e deixo um `config.json` de exemplo para você colar suas chaves.
+
+## Publicação de releases (rápido)
+- Eu preparei um script helper em `scripts/release-0.1.29.ps1` que cria commit, tag e publica a release. Antes de rodá-lo, defina `GH_TOKEN` no PowerShell:
+
+```powershell
+$env:GH_TOKEN = 'SEU_TOKEN_AQUI'
+powershell -ExecutionPolicy Bypass -File .\scripts\release-0.1.29.ps1
+```
+
+Não coloque o token em texto no repositório. Use variável de ambiente.

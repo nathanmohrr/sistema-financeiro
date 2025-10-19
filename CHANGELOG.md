@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.29 - 2025-10-19
+### Fixed
+- Corrigido problema em que modais abriam atrás do backdrop (tela cinza) ao abrir `Novo Produto`, histórico de produto, cliente e outros. Agora os modais são movidos para `document.body` na inicialização e handlers têm proteções para evitar que erros async bloqueiem a exibição.
+- Adicionado fallback temporário para criação de backdrop e logs diagnósticos para facilitar suporte.
+
+### Internal / Tech
+- Incremento da versão em `package.json` para 0.1.29.
+
+### Notes
+- Após validar, é seguro limpar os fallbacks manuais (backdrop criado em runtime) — posso fazer isso numa PR posterior quando confirmar estabilidade em clientes.
+
 ## 0.1.24 - 2025-09-25
 ### Added
 - Exibição do valor total de venda do KIT no modal de cadastro/edição de produto (soma dos preços de venda dos componentes × qtd).
