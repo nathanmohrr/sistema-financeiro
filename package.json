@@ -1,6 +1,6 @@
 {
   "name": "sistema-financeiro",
-  "version": "0.1.28",
+  "version": "0.1.34",
   "private": true,
   "description": "App desktop (Electron) do Sistema Financeiro com dados na nuvem (Firebase).",
   "author": {
@@ -24,7 +24,8 @@
   "dependencies": {
     "electron-updater": "^6.3.9",
     "escpos": "^3.0.0-alpha.6",
-    "node-printer": "^1.0.4"
+    "node-printer": "^1.0.4",
+    "printer": "^0.4.0"
   },
   "devDependencies": {
     "electron": "^30.0.0",
